@@ -9,7 +9,8 @@
     <packaging>pom</packaging>
 
     <modules>
-      <module>book</module>
+      <module>order-processor</module>
+      <module>order-status</module>
       <module>gateway</module>
     </modules>
 </project>

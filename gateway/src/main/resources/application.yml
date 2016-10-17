@@ -1,6 +1,6 @@
 zuul:
   routes:
-    books:
+    orders:
      url: http://localhost:8090
     messages:
       path: /messages/*

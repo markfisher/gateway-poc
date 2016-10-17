@@ -3,13 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>io.pivotal</groupId>
-	<artifactId>book</artifactId>
+	<groupId>io.pivotal.example</groupId>
+	<artifactId>order-status</artifactId>
 	<version>1.0.0.BUILD-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>book</name>
-	<description>REST Book Service</description>
+	<name>order-status</name>
+	<description>REST Microservice for Order Status</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
