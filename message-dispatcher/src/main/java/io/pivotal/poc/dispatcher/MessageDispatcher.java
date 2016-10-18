@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.pivotal.poc.gateway;
+package io.pivotal.poc.dispatcher;
 
 import java.util.Collections;
 
@@ -44,17 +44,17 @@ public class MessageDispatcher {
 		this.resolver = resolver;
 	}
 
-	@RequestMapping(path = "/messages/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
+	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public void handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
 		sendMessage(topic, body, contentType);
 	}
 
-	@RequestMapping(path = "/messages/{topic}", method = RequestMethod.POST, consumes = "*/*")
-	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@PathVariable String topic, @RequestBody byte[] body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(topic, body, contentType);
-	}
+//	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = "*/*")
+//	@ResponseStatus(HttpStatus.ACCEPTED)
+//	public void handleRequest(@PathVariable String topic, @RequestBody byte[] body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+//		sendMessage(topic, body, contentType);
+//	}
 
 	private void sendMessage(String topic, Object body, Object contentType) {
 		MessageChannel channel = resolver.resolveDestination(topic + ".input");

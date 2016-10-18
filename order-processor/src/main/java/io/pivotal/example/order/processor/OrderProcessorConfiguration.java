@@ -17,8 +17,6 @@
 package io.pivotal.example.order.processor;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Date;
 
 import org.slf4j.Logger;
@@ -32,7 +30,6 @@ import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.util.FileCopyUtils;
 
 @Configuration
 @EnableBinding(Sink.class)
@@ -50,32 +47,27 @@ public class OrderProcessorConfiguration {
 	}
 
 	@StreamListener(Sink.INPUT)
-	public void process(String order) {
-		log.info("received order: {}", order);
-		File file = new File(properties.getDirectory(), String.format("%s.pending", order));
-		try {
-			FileCopyUtils.copy(String.format("%s received at %d", order, System.currentTimeMillis()), new FileWriter(file));
-			scheduler().schedule(new OrderProcessor(order), new Date(System.currentTimeMillis() + 60_000));
-		}
-		catch (IOException e) {
-			log.error("failed to process order", e);
-		}
+	public void process(String orderPath) {
+		log.info("received order with location: {}", orderPath);
+		File pending = new File(String.format("%s.pending", orderPath));
+		new File(orderPath).renameTo(pending);
+		scheduler().schedule(new OrderProcessor(pending), new Date(System.currentTimeMillis() + 60_000));
 	}
 
 	private class OrderProcessor implements Runnable {
 
-		private final String order;
+		private final File pendingFile;
 
-		private OrderProcessor(String order) {
-			this.order = order;
+		private OrderProcessor(File pendingFile) {
+			this.pendingFile = pendingFile;
 		}
 
 		@Override
 		public void run() {
-			log.info("processing order: {}", order);
-			File file = new File(properties.getDirectory(), String.format("%s.pending", order));
-			File dest = new File(properties.getDirectory(), String.format("%s.complete", order));
-			file.renameTo(dest);
+			log.info("processing order: {}", pendingFile);
+			String filename = pendingFile.getName().substring(0, pendingFile.getName().lastIndexOf('.'));
+			File dest = new File(properties.getDirectory(), String.format("%s.complete", filename));
+			pendingFile.renameTo(dest);
 		}
 	}
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 package io.pivotal.poc.gateway;
 
 import org.springframework.boot.SpringApplication;
@@ -26,10 +26,11 @@ import org.springframework.cloud.deployer.spi.local.LocalAppDeployer;
 import org.springframework.cloud.deployer.spi.local.LocalDeployerProperties;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.stream.annotation.EnableBinding;
-import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.multipart.MultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-import io.pivotal.poc.gateway.filters.pre.LoggingFilter;
+import io.pivotal.poc.gateway.filters.pre.FileClaimCheckFilter;
 import io.pivotal.poc.gateway.filters.pre.RequestMonitoringFilter;
 
 @EnableZuulProxy
@@ -58,17 +59,17 @@ public class GatewayApplication {
 	}
 
 	@Bean
-	public LoggingFilter loggingFilter() {
-		return new LoggingFilter();
+	public MultipartResolver multipartResolver() {
+		return new StandardServletMultipartResolver();
+	}
+
+	@Bean
+	public FileClaimCheckFilter fileClaimCheckFilter() {
+		return new FileClaimCheckFilter();
 	}
 
 	@Bean
 	public RequestMonitoringFilter requestMonitoringFilter(FunctionExecutorPoolManager poolManager) {
 		return new RequestMonitoringFilter(poolManager);
-	}
-
-	@Bean
-	public MessageDispatcher messageDispatcher(BinderAwareChannelResolver resolver) {
-		return new MessageDispatcher(resolver);
 	}
 }

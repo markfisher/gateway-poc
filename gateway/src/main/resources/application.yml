@@ -3,8 +3,13 @@ zuul:
     orders:
      url: http://localhost:8090
     messages:
-      path: /messages/*
-      url: forward:/messages
+      #path: /messages/*
+      #url: forward:/messages
+      url: http://localhost:9000
+
+logging:
+  level:
+    root: INFO
 
 ribbon:
   eureka:
@@ -12,3 +17,6 @@ ribbon:
 
 server:
   port: 8080
+  error:
+    whitelabel:
+      enabled: false
