@@ -1,7 +1,12 @@
+spring:
+  application:
+    name: gateway
+
 zuul:
   routes:
     orders:
-     url: http://localhost:8090
+      service-id: order_status
+     #url: http://localhost:8090
     messages:
       #path: /messages/*
       #url: forward:/messages
@@ -11,9 +16,19 @@ logging:
   level:
     root: INFO
 
-ribbon:
-  eureka:
-    enabled: false
+#ribbon:
+#  eureka:
+#    enabled: false
+eureka:
+  instance:
+    hostname: localhost
+    leaseRenewalIntervalInSeconds: 10
+    metadataMap:
+      instanceId: ${spring.application.name}:${server.port:8080}
+  client:
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
 
 server:
   port: 8080

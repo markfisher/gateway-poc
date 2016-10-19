@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: order_status
+
+server:
+  port: 8090
+
