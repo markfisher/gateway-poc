@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package io.pivotal.example.order.processor;
+package io.pivotal.example.order.phase2;
 
 import java.io.File;
+import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,20 +27,24 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
+import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
+/**
+ * @author Marius Bogoevici
+ */
 @Configuration
-@EnableBinding(Processor.class)
-@EnableConfigurationProperties(OrderProcessorConfigurationProperties.class)
-public class OrderProcessorConfiguration {
+@EnableBinding(Sink.class)
+@EnableConfigurationProperties(OrderProcessorPhase2ConfigurationProperties.class)
+public class OrderProcessorPhase2Configuration {
 
-	private static Logger log = LoggerFactory.getLogger(OrderProcessorConfiguration.class);
+
+	private static Logger log = LoggerFactory.getLogger(OrderProcessorPhase2Configuration.class);
 
 	@Autowired
-	private OrderProcessorConfigurationProperties properties;
+	private OrderProcessorPhase2ConfigurationProperties properties;
 
 	@Bean
 	public ThreadPoolTaskScheduler scheduler() {
@@ -47,17 +52,26 @@ public class OrderProcessorConfiguration {
 	}
 
 	@StreamListener(Processor.INPUT)
-	@SendTo(Processor.OUTPUT)
-	public String process(String orderPath) throws Exception {
-		log.info("received order with location: {}", orderPath);
-		File pendingFile = new File(String.format("%s.pending", orderPath));
-		new File(orderPath).renameTo(pendingFile);
-		Thread.sleep(60_000);
-		log.info("processing order: {}", pendingFile);
-		String filename = pendingFile.getName().substring(0, pendingFile.getName().lastIndexOf('.'));
-		File dest = new File(properties.getDirectory(), String.format("%s.phase2", filename));
-		pendingFile.renameTo(dest);
-		return orderPath;
+	public void process(String orderPath) throws Exception {
+		log.info("received order: {}", orderPath);
+		File phase2Waiting = new File(String.format("%s.phase2", orderPath));
+		scheduler().schedule(new OrderProcessor(phase2Waiting), new Date(System.currentTimeMillis() + 60_000));
 	}
 
+	private class OrderProcessor implements Runnable {
+
+		private final File pendingFile;
+
+		private OrderProcessor(File pendingFile) {
+			this.pendingFile = pendingFile;
+		}
+
+		@Override
+		public void run() {
+			log.info("processing order: {}", pendingFile);
+			String filename = pendingFile.getName().substring(0, pendingFile.getName().lastIndexOf('.'));
+			File dest = new File(properties.getDirectory(),String.format("%s.complete", filename));
+			pendingFile.renameTo(dest);
+		}
+	}
 }
