@@ -52,7 +52,7 @@ public class OrderProcessorConfiguration {
 		log.info("received order with location: {}", orderPath);
 		File pendingFile = new File(String.format("%s.pending", orderPath));
 		new File(orderPath).renameTo(pendingFile);
-		Thread.sleep(60_000);
+		Thread.sleep(30_000);
 		log.info("processing order: {}", pendingFile);
 		String filename = pendingFile.getName().substring(0, pendingFile.getName().lastIndexOf('.'));
 		File dest = new File(properties.getDirectory(), String.format("%s.phase2", filename));

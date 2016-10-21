@@ -55,7 +55,7 @@ public class OrderProcessorPhase2Configuration {
 	public void process(String orderPath) throws Exception {
 		log.info("received order: {}", orderPath);
 		File phase2Waiting = new File(String.format("%s.phase2", orderPath));
-		scheduler().schedule(new OrderProcessor(phase2Waiting), new Date(System.currentTimeMillis() + 60_000));
+		scheduler().schedule(new OrderProcessor(phase2Waiting), new Date(System.currentTimeMillis() + 30_000));
 	}
 
 	private class OrderProcessor implements Runnable {
