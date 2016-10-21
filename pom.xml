@@ -11,6 +11,7 @@
     <modules>
       <module>order-processor</module>
       <module>order-status</module>
+      <module>order-phase2</module>
       <module>gateway</module>
     </modules>
 </project>
