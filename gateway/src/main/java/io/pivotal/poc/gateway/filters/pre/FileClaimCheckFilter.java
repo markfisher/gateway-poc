@@ -83,6 +83,7 @@ public class FileClaimCheckFilter extends ZuulFilter {
 			RequestEntity<String> requestEntity = RequestEntity.post(new URI(url)).contentType(MediaType.TEXT_PLAIN).body(uploadedFilePath);
 			template.exchange(requestEntity, String.class);
 			ctx.setResponseStatusCode(200);
+			ctx.setResponseBody("Received: " + name);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

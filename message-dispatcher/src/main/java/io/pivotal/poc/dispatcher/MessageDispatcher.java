@@ -21,6 +21,7 @@ import java.util.Collections;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -46,8 +47,9 @@ public class MessageDispatcher {
 
 	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public void handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
+	public ResponseEntity<?> handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
 		sendMessage(topic, body, contentType);
+		return ResponseEntity.ok("Received:\n" + body);
 	}
 
 //	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = "*/*")
