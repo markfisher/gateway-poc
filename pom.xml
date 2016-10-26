@@ -16,5 +16,6 @@
       <module>claim-check</module>
       <module>eureka-server</module>
       <module>gateway</module>
+      <module>zipkin-server</module>
     </modules>
 </project>
