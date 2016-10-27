@@ -16,7 +16,9 @@
 
 package io.pivotal.poc.dispatcher;
 
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.http.HttpHeaders;
@@ -26,6 +28,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -41,26 +44,30 @@ public class MessageDispatcher {
 
 	private final BinderAwareChannelResolver resolver;
 
-	public MessageDispatcher(BinderAwareChannelResolver resolver) {
+	private final Set<String> requestHeadersToMap;
+
+	public MessageDispatcher(BinderAwareChannelResolver resolver, Set<String> requestHeadersToMap) {
 		this.resolver = resolver;
+		this.requestHeadersToMap = requestHeadersToMap;
 	}
 
 	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
 	@ResponseStatus(HttpStatus.ACCEPTED)
-	public ResponseEntity<?> handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-		sendMessage(topic, body, contentType);
-		return ResponseEntity.ok("Received:\n" + body);
+	public ResponseEntity<?> handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader HttpHeaders requestHeaders) {
+		sendMessage(topic, body, requestHeaders);
+		return ResponseEntity.ok(String.format("Received:%n%s%n", body));
 	}
 
-//	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = "*/*")
-//	@ResponseStatus(HttpStatus.ACCEPTED)
-//	public void handleRequest(@PathVariable String topic, @RequestBody byte[] body, @RequestHeader(HttpHeaders.CONTENT_TYPE) Object contentType) {
-//		sendMessage(topic, body, contentType);
-//	}
-
-	private void sendMessage(String topic, Object body, Object contentType) {
+	private void sendMessage(String topic, Object body, HttpHeaders requestHeaders) {
 		MessageChannel channel = resolver.resolveDestination(topic + ".input");
-		channel.send(MessageBuilder.createMessage(body,
-				new MessageHeaders(Collections.singletonMap(MessageHeaders.CONTENT_TYPE, contentType))));
+		MessageBuilder<?> builder = MessageBuilder.withPayload(body);
+		builder.setHeader(MessageHeaders.CONTENT_TYPE, requestHeaders.getContentType());
+		for (Map.Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+			String headerName = entry.getKey();
+			if (requestHeadersToMap.contains(headerName)) {
+				builder.setHeaderIfAbsent(headerName, StringUtils.collectionToCommaDelimitedString(entry.getValue()));
+			}
+		}
+		channel.send(builder.build());
 	}
 }

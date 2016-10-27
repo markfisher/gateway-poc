@@ -16,15 +16,24 @@
 
 package io.pivotal.poc.dispatcher;
 
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.util.StringUtils;
 
 @EnableBinding
 @SpringBootApplication
+@EnableConfigurationProperties(HeaderMappingConfigurationProperties.class)
 public class MessageDispatcherApplication {
+
+	@Autowired
+	private HeaderMappingConfigurationProperties headerMappingConfigurationProperties;
 
 	public static void main(String[] args) {
 		SpringApplication.run(MessageDispatcherApplication.class, args);
@@ -32,6 +41,7 @@ public class MessageDispatcherApplication {
 
 	@Bean
 	public MessageDispatcher messageDispatcher(BinderAwareChannelResolver resolver) {
-		return new MessageDispatcher(resolver);
+		Set<String> requestHeadersToMap = StringUtils.commaDelimitedListToSet(headerMappingConfigurationProperties.getRequest());
+		return new MessageDispatcher(resolver, requestHeadersToMap);
 	}
 }
