@@ -31,8 +31,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-import io.pivotal.poc.gateway.filters.pre.FileClaimCheckFilter;
 import io.pivotal.poc.gateway.filters.pre.RequestMonitoringFilter;
+import io.pivotal.poc.gateway.filters.pre.XPathHeaderEnrichingFilter;
+import io.pivotal.poc.gateway.filters.route.FileClaimCheckFilter;
 
 @EnableZuulProxy
 @EnableBinding
@@ -63,6 +64,11 @@ public class GatewayApplication {
 	@Bean
 	public MultipartResolver multipartResolver() {
 		return new StandardServletMultipartResolver();
+	}
+
+	@Bean
+	public XPathHeaderEnrichingFilter xpathHeaderEnrichingFilter() {
+		return new XPathHeaderEnrichingFilter("customer", "//@customer");
 	}
 
 	@Bean
