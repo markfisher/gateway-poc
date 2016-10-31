@@ -1,0 +1,73 @@
+== What is this?
+
+This is a proof of concept integrating Spring Cloud technologies for building a gateway solution implementation.
+
+It illustrates the following use cases:
+
+* Routing of HTTP requests to a RESTful component;
+* Claim checking of incoming data based on request payload;
+* Routing of HTTP requests to a messaging system;
+* Event-driven processing of forwarded HTTP requests as part of a multi-stage pipeline;
+* Status checking of pending requests
+* Dynamic service registration via Eureka
+
+== Components
+
+The project consists of the following modules:
+
+* link:gateway[`gateway`] - a Zuul gateway with custom filters for claim checking and XPath header enrichment, supporting routing to both static applications and dynamically registered applications via Eureka;
+* link:message-dispatcher[`message-dispatcher`] - a Spring Cloud Stream application that routes http requests to the various queues;
+  the application is statically registered in the Zuul gateway;
+* link:order-processor[`order-processor`] - a Spring Cloud Stream application that processes messages sent by the dispatcher;
+* link:order-phase2[`order-phase2`] - a Spring Cloud Stream application that processes messages sent by the `order-processor`;
+* link:order-status[`order-status`] - a RESTful application that displays the status of a request as it is handled by the system.
+
+== Prerequisites
+
+The project requires a running Eureka server listening on port 8761.
+You can either create an instance with Spring Initializr or use the one in https://github.com/markfisher/eureka-server.
+
+The project also requires a running Rabbit MQ instance listening on port 5672 on localhost.
+
+== Building and running
+
+The project can be built with Maven.
+
+    $ mvn clean package
+
+Start the component modules:
+
+    $ java -jar gateway/target/gateway-1.0.0.BUILD-SNAPSHOT.jar
+    $ java -jar message-dispatcher/target/message-dispatcher-1.0.0.BUILD-SNAPSHOT.jar
+    $ java -jar order-processor/target/order-processor-1.0.0.BUILD-SNAPSHOT.jar
+    $ java -jar order-phase2/target/order-phase2-0.0.1-SNAPSHOT.jar
+    $ java -jar order-status/target/order-status-1.0.0.BUILD-SNAPSHOT.jar
+
+The applications are registered to the following ports:
+
+* `gateway` : 8080
+* `message-handler`: 9000
+* `order-processor`: 9001
+* `order-processor`: 9002
+* `order-status`: 8090
+
+Ensure that the `/tmp/orders` folder exists.
+Open the form `upload.html` in a web browser and upload the `simple-order.xml` file.
+Choose an order id, e.g. `order-1`.
+The form will upload the contents of the file to the `http://localhost:8080/messages/orders` endpoint as a multipart form.
+
+Once the file is uploaded it will be processed first by `order-processor`, and after the first processor is done and has sent its notification message, by `order-phase2`.
+
+Expect some output similar to the following in the log of the `order-processor` application:
+
+    2016-10-31 01:18:09.810  INFO 15491 --- [MmO6M0Jooo1Fw-1] i.p.e.o.p.OrderProcessorConfiguration    : received order with location: /tmp/orders/order-1
+    2016-10-31 01:18:39.813  INFO 15491 --- [MmO6M0Jooo1Fw-1] i.p.e.o.p.OrderProcessorConfiguration    : processing order: /tmp/orders/order-1.pending
+
+The `order-processor` waits 30 seconds before updating the extension of the file to `pending`.
+You can use the `http://localhost:8080/orders/status/${order-id}` URL to check the status the an order as it progresses.
+Use the same id as on upload.
+
+Expect some output similar to the following in the log of the `order-processor` application:
+
+    2016-10-31 01:18:39.844  INFO 15777 --- [ZafWknlBvznJQ-1] .e.o.p.OrderProcessorPhase2Configuration : received order: /tmp/orders/order-1
+    2016-10-31 01:19:09.846  INFO 15777 --- [    scheduler-1] .e.o.p.OrderProcessorPhase2Configuration : processing order: /tmp/orders/order-1.phase2

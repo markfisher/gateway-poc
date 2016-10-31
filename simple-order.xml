@@ -1,0 +1,3 @@
+<order id="1" customer="acme">
+  <item type="widget" quantity="42"/>
+</order>
