@@ -45,15 +45,15 @@ Start the component modules:
 
 The applications are registered to the following ports:
 
-* `gateway` : 8080
-* `message-handler`: 9000
+* `gateway`: 8080
+* `message-dispatcher`: 9000
 * `order-processor`: 9001
-* `order-processor`: 9002
+* `order-phase2`: 9002
 * `order-status`: 8090
 
 Ensure that the `/tmp/orders` folder exists.
 Open the form `upload.html` in a web browser and upload the `simple-order.xml` file.
-Choose an order id, e.g. `order-1`.
+Specify an order id in the "name" field, e.g. `order-1`.
 The form will upload the contents of the file to the `http://localhost:8080/messages/orders` endpoint as a multipart form.
 
 Once the file is uploaded it will be processed first by `order-processor`, and after the first processor is done and has sent its notification message, by `order-phase2`.
@@ -64,10 +64,13 @@ Expect some output similar to the following in the log of the `order-processor` 
     2016-10-31 01:18:39.813  INFO 15491 --- [MmO6M0Jooo1Fw-1] i.p.e.o.p.OrderProcessorConfiguration    : processing order: /tmp/orders/order-1.pending
 
 The `order-processor` waits 30 seconds before updating the extension of the file to `pending`.
-You can use the `http://localhost:8080/orders/status/${order-id}` URL to check the status the an order as it progresses.
+You can use the `http://localhost:8080/orders/status/${order-id}` URL to check the status of an order as it progresses.
 Use the same id as on upload.
 
-Expect some output similar to the following in the log of the `order-processor` application:
+Expect some output similar to the following in the log of the `order-phase2` application:
 
     2016-10-31 01:18:39.844  INFO 15777 --- [ZafWknlBvznJQ-1] .e.o.p.OrderProcessorPhase2Configuration : received order: /tmp/orders/order-1
     2016-10-31 01:19:09.846  INFO 15777 --- [    scheduler-1] .e.o.p.OrderProcessorPhase2Configuration : processing order: /tmp/orders/order-1.phase2
+
+Watch this page as the solution continues to evolve...
+(XPath header enrichment, XSLT processing, etc.)
