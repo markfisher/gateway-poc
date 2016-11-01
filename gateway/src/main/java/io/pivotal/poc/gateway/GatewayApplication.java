@@ -16,24 +16,24 @@
 
 package io.pivotal.poc.gateway;
 
+import java.io.File;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.deployer.resource.maven.MavenProperties;
-import org.springframework.cloud.deployer.resource.maven.MavenResourceLoader;
-import org.springframework.cloud.deployer.spi.app.AppDeployer;
-import org.springframework.cloud.deployer.spi.local.LocalAppDeployer;
 import org.springframework.cloud.deployer.spi.local.LocalDeployerProperties;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
+import org.springframework.util.SimpleIdGenerator;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-import io.pivotal.poc.gateway.filters.pre.RequestMonitoringFilter;
+import io.pivotal.poc.claimcheck.FileClaimCheckStore;
+import io.pivotal.poc.claimcheck.LocalFileClaimCheckStore;
+import io.pivotal.poc.gateway.filters.pre.FileClaimCheckFilter;
 import io.pivotal.poc.gateway.filters.pre.XPathHeaderEnrichingFilter;
-import io.pivotal.poc.gateway.filters.route.FileClaimCheckFilter;
 
 @EnableZuulProxy
 @EnableBinding
@@ -47,21 +47,6 @@ public class GatewayApplication {
 	}
 
 	@Bean
-	public AppDeployer appDeployer(LocalDeployerProperties properties) {
-		return new LocalAppDeployer(properties);
-	}
-
-	@Bean
-	public MavenResourceLoader mavenResourceLoader() {
-		return new MavenResourceLoader(new MavenProperties());
-	}
-
-	@Bean
-	public FunctionExecutorPoolManager functionExecutorPoolManager(AppDeployer deployer) {
-		return new FunctionExecutorPoolManager(deployer, mavenResourceLoader());
-	}
-
-	@Bean
 	public MultipartResolver multipartResolver() {
 		return new StandardServletMultipartResolver();
 	}
@@ -72,12 +57,32 @@ public class GatewayApplication {
 	}
 
 	@Bean
-	public FileClaimCheckFilter fileClaimCheckFilter() {
-		return new FileClaimCheckFilter();
+	public FileClaimCheckStore fileClaimCheckStore() {
+		return new LocalFileClaimCheckStore(new File("/tmp/uploads"), new SimpleIdGenerator());
 	}
 
 	@Bean
-	public RequestMonitoringFilter requestMonitoringFilter(FunctionExecutorPoolManager poolManager) {
-		return new RequestMonitoringFilter(poolManager);
+	public FileClaimCheckFilter fileClaimCheckFilter(FileClaimCheckStore fileClaimCheckStore) {
+		return new FileClaimCheckFilter(fileClaimCheckStore);
 	}
+
+//	@Bean
+//	public RequestMonitoringFilter requestMonitoringFilter(FunctionExecutorPoolManager poolManager) {
+//		return new RequestMonitoringFilter(poolManager);
+//	}
+
+//	@Bean
+//	public FunctionExecutorPoolManager functionExecutorPoolManager(AppDeployer deployer) {
+//		return new FunctionExecutorPoolManager(deployer, mavenResourceLoader());
+//	}
+
+//	@Bean
+//	public MavenResourceLoader mavenResourceLoader() {
+//		return new MavenResourceLoader(new MavenProperties());
+//	}
+
+//	@Bean
+//	public AppDeployer appDeployer(LocalDeployerProperties properties) {
+//		return new LocalAppDeployer(properties);
+//	}
 }

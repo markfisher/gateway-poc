@@ -24,6 +24,7 @@ import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -54,11 +55,11 @@ public class MessageDispatcher {
 	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<?> handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader HttpHeaders requestHeaders) {
-		sendMessage(topic, body, requestHeaders);
-		return ResponseEntity.ok(String.format("Received:%n%s%n", body));
+		String id = sendMessage(topic, body, requestHeaders);
+		return ResponseEntity.ok(id);
 	}
 
-	private void sendMessage(String topic, Object body, HttpHeaders requestHeaders) {
+	private String sendMessage(String topic, Object body, HttpHeaders requestHeaders) {
 		MessageChannel channel = resolver.resolveDestination(topic + ".input");
 		MessageBuilder<?> builder = MessageBuilder.withPayload(body);
 		builder.setHeader(MessageHeaders.CONTENT_TYPE, requestHeaders.getContentType());
@@ -68,6 +69,8 @@ public class MessageDispatcher {
 				builder.setHeaderIfAbsent(headerName, StringUtils.collectionToCommaDelimitedString(entry.getValue()));
 			}
 		}
-		channel.send(builder.build());
+		Message<?> message = builder.build();
+		channel.send(message);
+		return message.getHeaders().getId().toString();
 	}
 }

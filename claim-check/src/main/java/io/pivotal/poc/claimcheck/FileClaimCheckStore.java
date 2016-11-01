@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package io.pivotal.poc.gateway.filters.route;
+package io.pivotal.poc.claimcheck;
 
-import io.pivotal.poc.gateway.filters.AbstractFilter;
+import org.springframework.core.io.Resource;
 
 /**
  * @author Mark Fisher
  */
-public abstract class AbstractRouteFilter extends AbstractFilter {
+public interface FileClaimCheckStore {
 
-	public AbstractRouteFilter(int order) {
-		super(order);
-	}
+	String save(Resource resource);
 
-	@Override
-	public final String filterType() {
-		return "route";
-	}
+	Resource find(String id);
+
 }

@@ -16,6 +16,8 @@
 
 package io.pivotal.poc.gateway.filters.pre;
 
+import java.util.Map;
+
 import org.w3c.dom.Node;
 
 import org.springframework.integration.xml.DefaultXmlPayloadConverter;
@@ -53,11 +55,13 @@ public class XPathHeaderEnrichingFilter extends AbstractPreFilter {
 	protected void filter(RequestContext requestContext) {
 		StandardMultipartHttpServletRequest multipartRequest = this.extractMultipartRequest(requestContext.getRequest());
 		try {
-			MultipartFile file = multipartRequest.getFile("file");
-			String value = this.evaluateExpression(file.getInputStream());
-			if (value != null) {
-				log.info("adding header from xpath evaluation: {}={}", key, value);
-				requestContext.getZuulRequestHeaders().put(key, value);
+			for (Map.Entry<String, MultipartFile> entry : multipartRequest.getFileMap().entrySet()) {
+				String value = this.evaluateExpression(entry.getValue().getInputStream());
+				if (value != null) {
+					String headerName = String.format("%s.%s", entry.getKey(), key);
+					log.info("adding header from xpath evaluation: {}={}", headerName, value);
+					requestContext.getZuulRequestHeaders().put(headerName, value);
+				}
 			}
 		}
 		catch (Exception e) {
