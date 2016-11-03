@@ -26,7 +26,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "order")
 public class OrderStatusConfigurationProperties {
 
-	private File directory = new File("/tmp/orders");
+	private File directory = new File("/tmp/uploads");
 
 	public File getDirectory() {
 		if (!this.directory.exists()) {
