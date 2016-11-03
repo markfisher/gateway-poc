@@ -14,6 +14,7 @@
       <module>message-dispatcher</module>
       <module>order-phase2</module>
       <module>claim-check</module>
+      <module>eureka-server</module>
       <module>gateway</module>
     </modules>
 </project>
