@@ -1,0 +1,11 @@
+eureka:
+  instance:
+    hostname: localhost
+    leaseRenewalIntervalInSeconds: 10
+    metadataMap:
+      instanceId: ${spring.application.name}:${server.port:8080}
+  client:
+    registryFetchIntervalSeconds: 5
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
+
