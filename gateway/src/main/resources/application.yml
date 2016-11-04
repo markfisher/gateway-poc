@@ -6,11 +6,18 @@ zuul:
   routes:
     orders:
       service-id: order_status
-     #url: http://localhost:8090
+      #url: http://localhost:8090
     messages:
-      #path: /messages/*
-      #url: forward:/messages
-      url: http://localhost:9000
+      service-id: message_dispatcher
+      #url: http://localhost:9000
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
 
 logging:
   level:
@@ -19,6 +26,7 @@ logging:
 #ribbon:
 #  eureka:
 #    enabled: false
+
 eureka:
   instance:
     hostname: localhost
