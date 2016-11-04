@@ -15,6 +15,7 @@ It illustrates the following use cases:
 
 The project consists of the following modules:
 
+* link:config-server[`config-server`] - a Config Server for hosting configuration from a git repository at `/tmp/config-repo`
 * link:eureka-server[`eureka-server`] - a Eureka Service Registry
 * link:gateway[`gateway`] - a Zuul gateway with custom filters for claim checking and XPath header enrichment, supporting routing to both static applications and dynamically registered applications via Eureka;
 * link:message-dispatcher[`message-dispatcher`] - a Spring Cloud Stream application that routes http requests to the various queues;
@@ -39,6 +40,7 @@ Start the component modules:
 
 The applications are registered to the following ports:
 
+* `config-server`: 8888
 * `eureka-server`: 8761
 * `gateway`: 8080
 * `message-dispatcher`: 9000
