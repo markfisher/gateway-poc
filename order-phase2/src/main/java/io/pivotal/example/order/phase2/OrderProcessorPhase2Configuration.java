@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.sleuth.Sampler;
+import org.springframework.cloud.sleuth.sampler.AlwaysSampler;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
@@ -55,7 +57,12 @@ public class OrderProcessorPhase2Configuration {
 	public void process(String orderPath) throws Exception {
 		log.info("received order: {}", orderPath);
 		File phase2Waiting = new File(String.format("%s.phase2", orderPath));
-		scheduler().schedule(new OrderProcessor(phase2Waiting), new Date(System.currentTimeMillis() + 30_000));
+		scheduler().schedule(new OrderProcessor(phase2Waiting), new Date(System.currentTimeMillis() + 1_000));
+	}
+
+	@Bean
+	public Sampler defaultSampler() {
+		return new AlwaysSampler();
 	}
 
 	private class OrderProcessor implements Runnable {
