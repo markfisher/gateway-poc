@@ -20,9 +20,3 @@ echo $! >> logs/pids
 
 java -jar order-status/target/order-status-$VERSION.jar > logs/order-status.log 2>&1 &
 echo $! >> logs/pids
-
-java -jar order-phase2/target/order-phase2-$VERSION.jar > logs/order-phase2.log 2>&1 &
-echo $! >> logs/pids
-
-java -jar order-processor/target/order-processor-$VERSION.jar > logs/order-processor.log 2>&1 &
-echo $! >> logs/pids
