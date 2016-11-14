@@ -13,6 +13,7 @@
       <module>order-status</module>
       <module>message-dispatcher</module>
       <module>order-phase2</module>
+      <module>xslt-processor</module>
       <module>claim-check</module>
       <module>config-server</module>
       <module>eureka-server</module>
