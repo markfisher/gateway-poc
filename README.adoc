@@ -52,7 +52,7 @@ The application PIDs are all written to `logs/pids`.
 The applications can be stopped by executing `stop-all.sh`.
 
 The stream processing pipeline can be deployed using Spring Cloud Data Flow.
-Start the dataflow server and then execute the following commands in the shell:
+Start the Data Flow Server and then execute the following commands in the shell:
 
 ```
 dataflow:> app import --uri http://bit.ly/1-0-4-GA-stream-applications-rabbit-maven
@@ -60,6 +60,8 @@ dataflow:> app import --uri http://bit.ly/1-0-4-GA-stream-applications-rabbit-ma
 dataflow:> app register --name xslt --type processor --uri file:///<path-to-project>/xslt-processor/target/xslt-processor-1.0.0.BUILD-SNAPSHOT.jar
 
 dataflow:> stream create orders --definition ":orders.input > pricer: xslt --xslt.stylesheet=file:///<path-to-project>/resources/add-price.xsl | taxer: xslt --xslt.stylesheet=file:///<path-to-project>/resources/calc-tax.xsl | log" --deploy
+
+dataflow:> stream create accepted-status --definition ":orders.input > :orders.status" --deploy
 
 dataflow:> stream create price-status --definition ":orders.pricer > :orders.status" --deploy
 
@@ -86,7 +88,16 @@ As shown above, the ID (generated during the claim-check) has been added as well
 The price was then replaced after tax was calculated by the `taxer` app.
 
 You can use the `http://localhost:8080/orders/status/${order-id}` URL to check the status of an order as it progresses.
-Use the same order id as displayed in the log output as shown above.
+Use the same order id as displayed in the log output as shown above. For example:
+
+```
+$ curl :8080/orders/status/00000000-0000-0000-0000-000000000001
+accepted,priced,taxed
+```
+
+Currently both `pricer` and `taxer` have a 10 second delay to simulate processing time.
+If you check the status within each 10 second window, you will see each of the above
+phases accumulating in the status response.
 
 Watch this page as the solution continues to evolve...
 (XPath header enrichment, config-server with dynamic updates, tracing, etc.)
