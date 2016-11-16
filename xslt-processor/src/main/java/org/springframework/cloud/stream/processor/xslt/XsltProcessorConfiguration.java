@@ -36,7 +36,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.util.IdGenerator;
 import org.springframework.util.SimpleIdGenerator;
 
 import io.pivotal.poc.claimcheck.FileClaimCheckStore;
@@ -61,10 +60,14 @@ public class XsltProcessorConfiguration {
 		String payload = message.getPayload().toString();
 		Matcher matcher = CLAIM_CHECK_PATTERN.matcher(payload);
 		if (matcher.matches()) {
-			Resource resource = fileClaimCheckStore().find(matcher.group(1));
+			String claimCheckId = matcher.group(1);
+			Resource resource = fileClaimCheckStore().find(claimCheckId);
 			try {
 				payload = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
-				message = MessageBuilder.withPayload(payload).copyHeaders(message.getHeaders()).build();
+				message = MessageBuilder.withPayload(payload)
+						.copyHeaders(message.getHeaders())
+						.setHeader("claimCheckId", claimCheckId)
+						.build();
 			}
 			catch (IOException e) {
 				e.printStackTrace();

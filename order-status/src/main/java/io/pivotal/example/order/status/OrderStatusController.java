@@ -16,10 +16,20 @@
 
 package io.pivotal.example.order.status;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.messaging.Sink;
+import org.springframework.messaging.Message;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,20 +38,35 @@ import org.springframework.web.bind.annotation.RestController;
  * @author Mark Fisher
  */
 @RestController
-@EnableConfigurationProperties(OrderStatusConfigurationProperties.class)
 public class OrderStatusController {
 
-	@Autowired
-	private OrderStatusConfigurationProperties properties;
+	private static Logger log = LoggerFactory.getLogger(OrderStatusController.class);
+
+	private static final Pattern PATTERN = Pattern.compile("^.*?id=\"([-0-9a-z]+)\".*?price=\"(.*?)\".*$");
+
+	private final ConcurrentMap<String, List<String>> statusMap = new ConcurrentHashMap<>();
 
 	@RequestMapping(value = "/status/{orderId}")
 	public String status(@PathVariable String orderId) {
-		for (File file : properties.getDirectory().listFiles(f -> f.getName().startsWith(orderId))) {
-			int lastdot = file.getName().lastIndexOf('.');
-			if (lastdot != -1) {
-				return file.getName().substring(lastdot + 1);
+		List<String> status = statusMap.get(orderId);
+		return (status == null) ? "unknown" : StringUtils.collectionToCommaDelimitedString(status);
+	}
+
+	@StreamListener(Sink.INPUT)
+	public void receive(Message<?> message) {
+		String payload = message.getPayload().toString();
+		Matcher matcher = PATTERN.matcher(payload.replace('\n', ' '));
+		if (matcher.matches()) {
+			String id = matcher.group(1);
+			String price = matcher.group(2);
+			log.info("updating order status for order ID '{}' with price: {}", id, price);
+			statusMap.putIfAbsent(id, new ArrayList<String>());
+			if (price.contains(".")) {
+				statusMap.get(id).add("taxed");
+			}
+			else {
+				statusMap.get(id).add("priced");
 			}
 		}
-		return "unknown";
 	}
 }

@@ -27,7 +27,7 @@ public class XsltProcessorConfigurationProperties {
 
 	private Resource stylesheet;
 
-	private String[] paramHeaders = new String[0];
+	private String[] paramHeaders = new String[] {"claimCheckId"};
 
 	public Resource getStylesheet() {
 		return stylesheet;

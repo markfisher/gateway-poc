@@ -20,21 +20,3 @@ echo $! >> logs/pids
 
 java -jar order-status/target/order-status-$VERSION.jar > logs/order-status.log 2>&1 &
 echo $! >> logs/pids
-
-java -jar xslt-processor/target/xslt-processor-$VERSION.jar \
-     --server.port=9001 \
-     --spring.application.name=order-pricer \
-     --spring.cloud.stream.bindings.input.destination=orders.input \
-     --spring.cloud.stream.bindings.output.destination=orders.priced \
-     --xslt.stylesheet=file:resources/add-price.xsl \
-     > logs/order-pricer.log 2>&1 &
-echo $! >> logs/pids
-
-java -jar xslt-processor/target/xslt-processor-$VERSION.jar \
-     --server.port=9002 \
-     --spring.application.name=tax-calculator \
-     --spring.cloud.stream.bindings.input.destination=orders.priced \
-     --spring.cloud.stream.bindings.output.destination=orders.taxed \
-     --xslt.stylesheet=file:resources/calc-tax.xsl \
-     > logs/tax-calculator.log 2>&1 &
-echo $! >> logs/pids
