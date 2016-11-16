@@ -58,6 +58,13 @@ public class XsltProcessorConfiguration {
 	@SendTo(Processor.OUTPUT)
 	public Message<?> process(Message<?> message) {
 		String payload = message.getPayload().toString();
+		try {
+			// simulating processing time
+			Thread.sleep(10_000);
+		}
+		catch (Exception e) {
+			Thread.currentThread().interrupt();
+		}
 		Matcher matcher = CLAIM_CHECK_PATTERN.matcher(payload);
 		if (matcher.matches()) {
 			String claimCheckId = matcher.group(1);
