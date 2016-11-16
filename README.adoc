@@ -20,8 +20,7 @@ The project consists of the following modules:
 * link:gateway[`gateway`] - a Zuul gateway with custom filters for claim checking and XPath header enrichment, supporting routing to both static applications and dynamically registered applications via Eureka;
 * link:message-dispatcher[`message-dispatcher`] - a Spring Cloud Stream application that routes http requests to the various queues;
   the application is statically registered in the Zuul gateway;
-* link:order-processor[`order-processor`] - a Spring Cloud Stream application that processes messages sent by the dispatcher;
-* link:order-phase2[`order-phase2`] - a Spring Cloud Stream application that processes messages sent by the `order-processor`;
+* link:xslt-processor[`xslt-processor`] - a Spring Cloud Stream application that transforms messages by delegating to an XSL stylesheet;
 * link:order-status[`order-status`] - a RESTful application that displays the status of a request as it is handled by the system.
 
 == Prerequisites
@@ -44,8 +43,6 @@ The applications are registered to the following ports:
 * `eureka-server`: 8761
 * `gateway`: 8080
 * `message-dispatcher`: 9000
-* `order-processor`: 9001
-* `order-phase2`: 9002
 * `order-status`: 8090
 
 The application logs are available within the `logs` directory.
@@ -54,26 +51,42 @@ The application PIDs are all written to `logs/pids`.
 
 The applications can be stopped by executing `stop-all.sh`.
 
+The stream processing pipeline can be deployed using Spring Cloud Data Flow.
+Start the dataflow server and then execute the following commands in the shell:
+
+```
+dataflow:> app import --uri http://bit.ly/1-0-4-GA-stream-applications-rabbit-maven
+
+dataflow:> app register --name xslt --type processor --uri file:///<path-to-project>/xslt-processor/target/xslt-processor-1.0.0.BUILD-SNAPSHOT.jar
+
+dataflow:> stream create orders --definition ":orders.input > pricer: xslt --xslt.stylesheet=file:///<path-to-project>/resources/add-price.xsl | taxer: xslt --xslt.stylesheet=file:///<path-to-project>/resources/calc-tax.xsl | log" --deploy
+
+dataflow:> stream create price-status --definition ":orders.pricer > :orders.status" --deploy
+
+dataflow:> stream create tax-status --definition ":orders.taxer > :orders.status" --deploy
+```
+
 Open the form `upload.html` in a web browser and upload the `simple-order.xml` file.
 
 The form will upload the contents of the file to the `http://localhost:8080/messages/orders` endpoint as a multipart form.
 
-Once the file is uploaded it will be processed first by `order-processor`,
-and after the first processor is done and has sent its notification message, by `order-phase2`.
+Once the file is uploaded it will be processed first by `pricer`,
+and after the first processor is done and has sent its notification message, by `taxer`.
+Finally it will arrive at the `log` sink where the output will be similar to the following:
 
-Expect some output similar to the following in the log of the `order-processor` application:
+```
+2016-11-16 12:32:48.164  INFO 41871 --- [.taxer.orders-1] log.sink:
+<?xml version="1.0" encoding="UTF-8"?>
+<order customer="acme" id="00000000-0000-0000-0000-000000000001">
+  <item type="widget" quantity="42" price="224.70000000000002"/>
+</order>
+```
 
-    2016-10-31 01:18:09.810  INFO 15491 --- [MmO6M0Jooo1Fw-1] i.p.e.o.p.OrderProcessorConfiguration    : received order with payload: {order=00000000-0000-0000-0000-000000000001}, and headers: {..}
-    2016-10-31 01:18:39.813  INFO 15491 --- [MmO6M0Jooo1Fw-1] i.p.e.o.p.OrderProcessorConfiguration    : processing order: /tmp/uploads/00000000-0000-0000-0000-000000000001.pending
+As shown above, the ID (generated during the claim-check) has been added as well as the price (by the `pricer` app).
+The price was then replaced after tax was calculated by the `taxer` app.
 
-The `order-processor` waits 30 seconds before updating the extension of the file to `pending`.
 You can use the `http://localhost:8080/orders/status/${order-id}` URL to check the status of an order as it progresses.
-Use the same order-id as displayed in the log output as shown above.
-
-Expect some output similar to the following in the log of the `order-phase2` application:
-
-    2016-10-31 01:18:39.844  INFO 15777 --- [ZafWknlBvznJQ-1] .e.o.p.OrderProcessorPhase2Configuration : received order: /tmp/uploads/00000000-0000-0000-0000-000000000001
-    2016-10-31 01:19:09.846  INFO 15777 --- [    scheduler-1] .e.o.p.OrderProcessorPhase2Configuration : processing order: /tmp/uploads/00000000-0000-0000-0000-000000000001.phase2
+Use the same order id as displayed in the log output as shown above.
 
 Watch this page as the solution continues to evolve...
-(XPath header enrichment, XSLT processing, etc.)
+(XPath header enrichment, config-server with dynamic updates, tracing, etc.)
