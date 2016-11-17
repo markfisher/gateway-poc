@@ -16,5 +16,7 @@
       <module>config-server</module>
       <module>eureka-server</module>
       <module>gateway</module>
+      <module>sleuth-stream</module>
+      <module>zipkin-server</module>
     </modules>
 </project>

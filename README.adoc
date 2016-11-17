@@ -22,6 +22,7 @@ The project consists of the following modules:
   the application is statically registered in the Zuul gateway;
 * link:xslt-processor[`xslt-processor`] - a Spring Cloud Stream application that transforms messages by delegating to an XSL stylesheet;
 * link:order-status[`order-status`] - a RESTful application that displays the status of a request as it is handled by the system.
+* link:zipkin-server[`zipkin-server`] - the Zipkin Server for collecting spans and displaying the UI
 
 == Prerequisites
 
@@ -44,6 +45,7 @@ The applications are registered to the following ports:
 * `gateway`: 8080
 * `message-dispatcher`: 9000
 * `order-status`: 8090
+* `zipkin-server`: 7000
 
 The application logs are available within the `logs` directory.
 
@@ -94,6 +96,9 @@ Use the same order id as displayed in the log output as shown above. For example
 $ curl :8080/orders/status/00000000-0000-0000-0000-000000000001
 accepted,priced,taxed
 ```
+
+You can point the browser to `http://localhost:7000` to visualize the Zipkin traces.
+Click on 'Find Traces' while selecting 'message_dispatcher'.
 
 Currently both `pricer` and `taxer` have a 10 second delay to simulate processing time.
 If you check the status within each 10 second window, you will see each of the above
