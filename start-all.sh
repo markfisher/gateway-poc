@@ -6,11 +6,11 @@ if [ ! -d logs ]; then
   mkdir logs
 fi
 
-java -jar zipkin-server/target/zipkin-server-$VERSION.jar > logs/zipkin-server 2>&1 &
-echo $! >> logs/pids
+java -jar zipkin-server/target/zipkin-server-$VERSION.jar > logs/zipkin-server.log 2>&1 &
+echo $! > logs/pids
 
 java -jar config-server/target/config-server-$VERSION.jar > logs/config-server.log 2>&1 &
-echo $! > logs/pids
+echo $! >> logs/pids
 
 java -jar eureka-server/target/eureka-server-$VERSION.jar > logs/eureka-server.log 2>&1 &
 echo $! >> logs/pids
