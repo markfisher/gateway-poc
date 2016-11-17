@@ -1,12 +1,12 @@
 /*
  * Copyright 2016 the original author or authors.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package io.pivotal.poc.claimcheck;
+package io.pivotal.poc.gateway.filters.pre;
 
-import org.springframework.core.io.Resource;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Mark Fisher
  */
-public interface FileClaimCheckStore {
+@ConfigurationProperties(prefix = "claimcheck")
+public class ClaimCheckFilterProperties {
 
-	String save(Resource resource);
+	private int threshold = 1024;
 
-	Resource find(String id);
+	public int getThreshold() {
+		return threshold;
+	}
 
+	public void setThreshold(int threshold) {
+		this.threshold = threshold;
+	}
 }

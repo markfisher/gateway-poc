@@ -18,27 +18,26 @@ package io.pivotal.poc.gateway;
 
 import java.io.File;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.deployer.spi.local.LocalDeployerProperties;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.SimpleIdGenerator;
-import org.springframework.web.multipart.MultipartResolver;
-import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-import io.pivotal.poc.claimcheck.FileClaimCheckStore;
+import io.pivotal.poc.claimcheck.ClaimCheckStore;
 import io.pivotal.poc.claimcheck.LocalFileClaimCheckStore;
-import io.pivotal.poc.gateway.filters.pre.FileClaimCheckFilter;
+import io.pivotal.poc.gateway.filters.pre.ClaimCheckFilter;
+import io.pivotal.poc.gateway.filters.pre.ClaimCheckFilterProperties;
 import io.pivotal.poc.gateway.filters.pre.XPathHeaderEnrichingFilter;
 
 @EnableZuulProxy
 @EnableBinding
 @EnableEurekaClient
-@EnableConfigurationProperties(LocalDeployerProperties.class)
+@EnableConfigurationProperties(ClaimCheckFilterProperties.class)
 @SpringBootApplication
 public class GatewayApplication {
 
@@ -46,10 +45,8 @@ public class GatewayApplication {
 		SpringApplication.run(GatewayApplication.class, args);
 	}
 
-	@Bean
-	public MultipartResolver multipartResolver() {
-		return new StandardServletMultipartResolver();
-	}
+	@Autowired
+	private ClaimCheckFilterProperties claimCheckFilterProperties;
 
 	@Bean
 	public XPathHeaderEnrichingFilter xpathHeaderEnrichingFilter() {
@@ -57,13 +54,13 @@ public class GatewayApplication {
 	}
 
 	@Bean
-	public FileClaimCheckStore fileClaimCheckStore() {
+	public ClaimCheckStore claimCheckStore() {
 		return new LocalFileClaimCheckStore(new File("/tmp/uploads"), new SimpleIdGenerator());
 	}
 
 	@Bean
-	public FileClaimCheckFilter fileClaimCheckFilter(FileClaimCheckStore fileClaimCheckStore) {
-		return new FileClaimCheckFilter(fileClaimCheckStore);
+	public ClaimCheckFilter claimCheckFilter(ClaimCheckStore claimCheckStore) {
+		return new ClaimCheckFilter(claimCheckStore, claimCheckFilterProperties.getThreshold());
 	}
 
 //	@Bean

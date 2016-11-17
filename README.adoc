@@ -5,7 +5,7 @@ This is a proof of concept integrating Spring Cloud technologies for building an
 It illustrates the following use cases:
 
 * Routing of HTTP requests to a RESTful component;
-* Claim checking of incoming data based on request payload;
+* Claim checking of incoming data based on request payload size;
 * Routing of HTTP requests to a messaging system;
 * Event-driven processing of forwarded HTTP requests as part of a multi-stage pipeline;
 * Status checking of pending requests;
@@ -21,8 +21,8 @@ The project consists of the following modules:
 * link:message-dispatcher[`message-dispatcher`] - a Spring Cloud Stream application that routes http requests to the various queues;
   the application is statically registered in the Zuul gateway;
 * link:xslt-processor[`xslt-processor`] - a Spring Cloud Stream application that transforms messages by delegating to an XSL stylesheet;
-* link:order-status[`order-status`] - a RESTful application that displays the status of a request as it is handled by the system.
-* link:zipkin-server[`zipkin-server`] - the Zipkin Server for collecting spans and displaying the UI
+* link:order-status[`order-status`] - a RESTful application that displays the status of a request as it is handled by the system;
+* link:zipkin-server[`zipkin-server`] - the Zipkin Server for collecting spans and displaying the UI.
 
 == Prerequisites
 
@@ -70,11 +70,16 @@ dataflow:> stream create price-status --definition ":orders.pricer > :orders.sta
 dataflow:> stream create tax-status --definition ":orders.taxer > :orders.status" --deploy
 ```
 
-Open the form `upload.html` in a web browser and upload the `simple-order.xml` file.
+POST the `simple-order.xml` file located in the "resources" directory. For example:
 
-The form will upload the contents of the file to the `http://localhost:8080/messages/orders` endpoint as a multipart form.
+```
+curl -X POST -H "Content-Type: text/plain" -d @resources/simple-order.xml :8080/messages/orders
+```
 
-Once the file is uploaded it will be processed first by `pricer`,
+The default threshold for the claim check filter is 1024. So that file will not be claim checked,
+but if you post `big-order.xml` (also located in the "resources" directory), it will be claim checked.
+
+Once the order is published by the `message-dispatcher` it will be processed first by `pricer`,
 and after the first processor is done and has sent its notification message, by `taxer`.
 Finally it will arrive at the `log` sink where the output will be similar to the following:
 

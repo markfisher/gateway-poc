@@ -38,7 +38,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.SimpleIdGenerator;
 
-import io.pivotal.poc.claimcheck.FileClaimCheckStore;
+import io.pivotal.poc.claimcheck.ClaimCheckStore;
 import io.pivotal.poc.claimcheck.LocalFileClaimCheckStore;
 
 /**
@@ -67,13 +67,13 @@ public class XsltProcessorConfiguration {
 		}
 		Matcher matcher = CLAIM_CHECK_PATTERN.matcher(payload);
 		if (matcher.matches()) {
-			String claimCheckId = matcher.group(1);
-			Resource resource = fileClaimCheckStore().find(claimCheckId);
+			String claimCheck = matcher.group(1);
+			Resource resource = claimCheckStore().find(claimCheck);
 			try {
 				payload = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
 				message = MessageBuilder.withPayload(payload)
 						.copyHeaders(message.getHeaders())
-						.setHeader("claimCheckId", claimCheckId)
+						.setHeader("claimCheck", claimCheck)
 						.build();
 			}
 			catch (IOException e) {
@@ -92,7 +92,7 @@ public class XsltProcessorConfiguration {
 	}
 
 	@Bean
-	public FileClaimCheckStore fileClaimCheckStore() {
+	public ClaimCheckStore claimCheckStore() {
 		File dir = new File("/tmp/uploads");
 		return new LocalFileClaimCheckStore(dir, new SimpleIdGenerator());
 	}

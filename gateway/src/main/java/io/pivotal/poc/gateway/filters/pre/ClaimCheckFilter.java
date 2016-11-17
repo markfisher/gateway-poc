@@ -19,35 +19,31 @@ package io.pivotal.poc.gateway.filters.pre;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 
-import org.springframework.core.io.AbstractResource;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.support.StandardMultipartHttpServletRequest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.zuul.context.RequestContext;
 import com.netflix.zuul.http.HttpServletRequestWrapper;
 import com.netflix.zuul.http.ServletInputStreamWrapper;
 
-import io.pivotal.poc.claimcheck.FileClaimCheckStore;
+import io.pivotal.poc.claimcheck.ClaimCheckStore;
 
 /**
  * @author Mark Fisher
  */
-public class FileClaimCheckFilter extends AbstractPreFilter {
+public class ClaimCheckFilter extends AbstractPreFilter {
 
-	private final FileClaimCheckStore store;
+	private final ClaimCheckStore store;
 
-	private final ObjectMapper mapper = new ObjectMapper();
+	private final int threshold;
 
 	private Field requestField;
 
@@ -55,10 +51,11 @@ public class FileClaimCheckFilter extends AbstractPreFilter {
 
 	private Field contentDataField;
 	
-	public FileClaimCheckFilter(FileClaimCheckStore store) {
+	public ClaimCheckFilter(ClaimCheckStore store, int threshold) {
 		super(2);
 		Assert.notNull(store, "FileClaimCheckStore must not be null");
 		this.store = store;
+		this.threshold = threshold;
 		this.requestField = ReflectionUtils.findField(HttpServletRequestWrapper.class, "req", HttpServletRequest.class);
 		this.servletRequestField = ReflectionUtils.findField(ServletRequestWrapper.class, "request", ServletRequest.class);
 		this.contentDataField = ReflectionUtils.findField(HttpServletRequestWrapper.class, "contentData", byte[].class);
@@ -72,37 +69,31 @@ public class FileClaimCheckFilter extends AbstractPreFilter {
 
 	@Override
 	public boolean shouldFilter(RequestContext ctx) {
-		StandardMultipartHttpServletRequest multipartRequest = this.extractMultipartRequest(ctx.getRequest());
-		return multipartRequest != null;
+		return ctx.getRequest().getContentLength() > this.threshold;
 	}
 
 	@Override
 	public void filter(RequestContext ctx) {
-		StandardMultipartHttpServletRequest multipartRequest = this.extractMultipartRequest(ctx.getRequest());
-		Map<String, String> uploadedFileMap = new HashMap<>();
-		for (Map.Entry<String, MultipartFile> entry : multipartRequest.getFileMap().entrySet()) {
-			String fileKey = entry.getKey();
-			String claimCheck = store.save(new MultipartFileResource(entry.getValue()));
-			uploadedFileMap.put(fileKey, claimCheck);
-		}
+		HttpServletRequest request = ctx.getRequest();
 		try {
-			String json = this.mapper.writeValueAsString(uploadedFileMap);
+			InputStream inputStream = request.getInputStream();
+			Resource resource = new InputStreamResource(inputStream);
+			String id = this.store.save(resource);
 			FileClaimCheckRequestWrapper wrapper = null;
-			HttpServletRequest request = ctx.getRequest();
 			if (request instanceof HttpServletRequestWrapper) {
 				HttpServletRequest wrapped = (HttpServletRequest) ReflectionUtils.getField(this.requestField, request);
 				if (wrapped instanceof HttpServletRequestWrapper) {
 					wrapped = ((HttpServletRequestWrapper) wrapped).getRequest();
 				}
-				wrapper = new FileClaimCheckRequestWrapper(json, wrapped);
+				wrapper = new FileClaimCheckRequestWrapper(id, wrapped);
 				ReflectionUtils.setField(this.requestField, request, wrapper);
-				ReflectionUtils.setField(this.contentDataField, request, json.getBytes());
+				ReflectionUtils.setField(this.contentDataField, request, id.getBytes());
 				if (request instanceof ServletRequestWrapper) {
 					ReflectionUtils.setField(this.servletRequestField, request, wrapper);
 				}
 			}
 			else {
-				wrapper = new FileClaimCheckRequestWrapper(json, request);
+				wrapper = new FileClaimCheckRequestWrapper(id, request);
 				ctx.setRequest(wrapper);
 			}
 			if (wrapper != null) {
@@ -112,16 +103,16 @@ public class FileClaimCheckFilter extends AbstractPreFilter {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
-		log.info(String.format("%s request to %s", multipartRequest.getMethod(), multipartRequest.getRequestURL().toString()));
+		log.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()));
 	}
 
 	private class FileClaimCheckRequestWrapper extends Servlet30RequestWrapper {
 
 		private final byte[] contentData;
 
-		public FileClaimCheckRequestWrapper(String path, HttpServletRequest request) {
+		public FileClaimCheckRequestWrapper(String id, HttpServletRequest request) {
 			super(request);
-			this.contentData = path.getBytes();
+			this.contentData = id.getBytes();
 		}
 
 		@Override
@@ -131,7 +122,7 @@ public class FileClaimCheckFilter extends AbstractPreFilter {
 
 		@Override
 		public final String getContentType() {
-			return "application/json";
+			return "application/x-claimcheck";
 		}
 
 		@Override
@@ -166,25 +157,6 @@ public class FileClaimCheckFilter extends AbstractPreFilter {
 		@Override
 		public HttpServletRequest getRequest() {
 			return this.request;
-		}
-	}
-
-	private class MultipartFileResource extends AbstractResource {
-
-		private final MultipartFile multipartFile;
-
-		public MultipartFileResource(MultipartFile multipartFile) {
-			this.multipartFile = multipartFile;
-		}
-
-		@Override
-		public String getDescription() {
-			return this.multipartFile.getName();
-		}
-
-		@Override
-		public InputStream getInputStream() throws IOException {
-			return this.multipartFile.getInputStream();
 		}
 	}
 }

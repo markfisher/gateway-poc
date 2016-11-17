@@ -33,7 +33,7 @@ import org.springframework.util.IdGenerator;
 /**
  * @author Mark Fisher
  */
-public class LocalFileClaimCheckStore implements FileClaimCheckStore {
+public class LocalFileClaimCheckStore implements ClaimCheckStore {
 
 	private static final Logger log = LoggerFactory.getLogger(LocalFileClaimCheckStore.class);
 

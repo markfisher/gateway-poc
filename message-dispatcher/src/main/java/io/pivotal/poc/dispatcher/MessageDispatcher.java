@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.stream.binding.BinderAwareChannelResolver;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -43,6 +46,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @Controller
 public class MessageDispatcher {
 
+	private static final Logger log = LoggerFactory.getLogger(MessageDispatcher.class);
+
 	private final BinderAwareChannelResolver resolver;
 
 	private final Set<String> requestHeadersToMap;
@@ -52,9 +57,10 @@ public class MessageDispatcher {
 		this.requestHeadersToMap = requestHeadersToMap;
 	}
 
-	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json"})
+	@RequestMapping(path = "/{topic}", method = RequestMethod.POST, consumes = {"text/*", "application/json", "application/x-claimcheck"})
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	public ResponseEntity<?> handleRequest(@PathVariable String topic, @RequestBody String body, @RequestHeader HttpHeaders requestHeaders) {
+		log.info("received request with body '" + body + "' and headers: " + requestHeaders);
 		String id = sendMessage(topic, body, requestHeaders);
 		return ResponseEntity.ok(id);
 	}
