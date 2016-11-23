@@ -27,4 +27,6 @@ public interface ClaimCheckStore {
 
 	Resource find(String id);
 
+	void update(String id, Resource resource);
+
 }

@@ -61,7 +61,17 @@ public class LocalFileClaimCheckStore implements ClaimCheckStore {
 
 	@Override
 	public String save(Resource resource) {
-		String id = idGenerator.generateId().toString();
+		String id = this.idGenerator.generateId().toString();
+		save(id, resource);
+		return id;
+	}
+
+	@Override
+	public void update(String id, Resource resource) {
+		this.save(id, resource);
+	}
+
+	private void save(String id, Resource resource) {
 		try {
 			File outputFile = new File(this.directory, id);
 			FileCopyUtils.copy(new InputStreamReader(resource.getInputStream()), new FileWriter(outputFile));
@@ -70,6 +80,5 @@ public class LocalFileClaimCheckStore implements ClaimCheckStore {
 		catch (IOException e) {
 			throw new IllegalStateException("failed to write file", e);
 		}
-		return id;
 	}
 }

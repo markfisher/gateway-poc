@@ -44,8 +44,6 @@ public class OrderStatusController {
 
 	private static final Pattern PATTERN = Pattern.compile("^.*?id=\"([-0-9a-z]+)\".*?price=\"(.*?)\".*$");
 
-	private static final Pattern ID_ONLY_PATTERN = Pattern.compile("^.*?:\\s*\"([-0-9a-f]+)\".*$");
-
 	private final ConcurrentMap<String, List<String>> statusMap = new ConcurrentHashMap<>();
 
 	@RequestMapping(value = "/status/{orderId}")
@@ -71,13 +69,18 @@ public class OrderStatusController {
 			}
 		}
 		else {
-			Matcher idMatcher = ID_ONLY_PATTERN.matcher(payload.replace('\n', ' '));
-			if (idMatcher.matches()) {
-				String id = idMatcher.group(1);
-				log.info("updating order status to 'accepted' for order ID '{}'", id);
-				statusMap.putIfAbsent(id, new ArrayList<String>());
-				statusMap.get(id).add("accepted");
+			String status = "accepted";
+			String stylesheet = message.getHeaders().get("stylesheet", String.class);
+			log.info("stylesheet applied: {}", stylesheet);
+			if ("add-price.xsl".equals(stylesheet)) {
+				status = "priced";
 			}
+			else if ("calc-tax.xsl".equals(stylesheet)) {
+				status = "taxed";
+			}
+			log.info("updating order status to '{}' for order ID '{}'", status, payload);
+			statusMap.putIfAbsent(payload, new ArrayList<String>());
+			statusMap.get(payload).add(status);
 		}
 	}
 }

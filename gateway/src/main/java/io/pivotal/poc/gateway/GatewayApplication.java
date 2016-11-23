@@ -26,6 +26,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.context.annotation.Bean;
+import org.springframework.util.JdkIdGenerator;
 import org.springframework.util.SimpleIdGenerator;
 
 import io.pivotal.poc.claimcheck.ClaimCheckStore;
@@ -55,7 +56,7 @@ public class GatewayApplication {
 
 	@Bean
 	public ClaimCheckStore claimCheckStore() {
-		return new LocalFileClaimCheckStore(new File("/tmp/uploads"), new SimpleIdGenerator());
+		return new LocalFileClaimCheckStore(new File("/tmp/uploads"), new JdkIdGenerator());
 	}
 
 	@Bean

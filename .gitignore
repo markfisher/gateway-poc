@@ -2,6 +2,7 @@
 .project
 .settings
 .springBeans
+spring-shell.log
 target/
 .idea
 *.iml
