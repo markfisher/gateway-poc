@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +40,6 @@ public class OrderStatusController {
 
 	private static Logger log = LoggerFactory.getLogger(OrderStatusController.class);
 
-	private static final Pattern PATTERN = Pattern.compile("^.*?id=\"([-0-9a-z]+)\".*?price=\"(.*?)\".*$");
-
 	private final ConcurrentMap<String, List<String>> statusMap = new ConcurrentHashMap<>();
 
 	@RequestMapping(value = "/status/{orderId}")
@@ -54,33 +50,18 @@ public class OrderStatusController {
 
 	@StreamListener(Sink.INPUT)
 	public void receive(Message<?> message) {
-		String payload = message.getPayload().toString();
-		Matcher matcher = PATTERN.matcher(payload.replace('\n', ' '));
-		if (matcher.matches()) {
-			String id = matcher.group(1);
-			String price = matcher.group(2);
-			log.info("updating order status for order ID '{}' with price: {}", id, price);
-			statusMap.putIfAbsent(id, new ArrayList<String>());
-			if (price.contains(".")) {
-				statusMap.get(id).add("taxed");
-			}
-			else {
-				statusMap.get(id).add("priced");
-			}
+		String orderId = message.getHeaders().get("orderId", String.class);
+		String status = "accepted";
+		String stylesheet = message.getHeaders().get("stylesheet", String.class);
+		log.info("stylesheet applied: {}", stylesheet);
+		if ("add-price.xsl".equals(stylesheet)) {
+			status = "priced";
 		}
-		else {
-			String status = "accepted";
-			String stylesheet = message.getHeaders().get("stylesheet", String.class);
-			log.info("stylesheet applied: {}", stylesheet);
-			if ("add-price.xsl".equals(stylesheet)) {
-				status = "priced";
-			}
-			else if ("calc-tax.xsl".equals(stylesheet)) {
-				status = "taxed";
-			}
-			log.info("updating order status to '{}' for order ID '{}'", status, payload);
-			statusMap.putIfAbsent(payload, new ArrayList<String>());
-			statusMap.get(payload).add(status);
+		else if ("calc-tax.xsl".equals(stylesheet)) {
+			status = "taxed";
 		}
+		log.info("updating order status to '{}' for order ID '{}'", status, orderId);
+		statusMap.putIfAbsent(orderId, new ArrayList<String>());
+		statusMap.get(orderId).add(status);
 	}
 }

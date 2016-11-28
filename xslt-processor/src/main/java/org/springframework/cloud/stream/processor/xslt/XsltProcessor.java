@@ -42,7 +42,7 @@ import io.pivotal.poc.claimcheck.ClaimCheckStore;
  */
 public class XsltProcessor {
 
-	private static Logger log = LoggerFactory.getLogger(XsltProcessorConfiguration.class);
+	private static Logger log = LoggerFactory.getLogger(XsltProcessor.class);
 
 	private volatile String stylesheetName;
 
@@ -68,14 +68,17 @@ public class XsltProcessor {
 		log.info("received headers: {}", headers);
 		try {
 			// simulating processing time
-			Thread.sleep(10_000);
+			Thread.sleep(30_000);
 		}
 		catch (Exception e) {
 			Thread.currentThread().interrupt();
 		}
 		boolean isClaimCheck = "application/x-claimcheck".equals(headers.get("contentType"));
 		Message<String> message = isClaimCheck ? checkout(payload, headers)
-				: MessageBuilder.withPayload(payload).copyHeaders(headers).build();
+				: MessageBuilder.withPayload(payload)
+								.copyHeaders(headers)
+								.setHeader("stylesheet", this.stylesheetName)
+								.build();
 		Message<?> transformed = this.transformer.transform(message);
 		return isClaimCheck ? checkin(transformed) : transformed;
 	}

@@ -32,6 +32,8 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.IdGenerator;
+import org.springframework.util.JdkIdGenerator;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,6 +53,8 @@ public class MessageDispatcher {
 	private final BinderAwareChannelResolver resolver;
 
 	private final Set<String> requestHeadersToMap;
+
+	private final IdGenerator idGenerator = new JdkIdGenerator();
 
 	public MessageDispatcher(BinderAwareChannelResolver resolver, Set<String> requestHeadersToMap) {
 		this.resolver = resolver;
@@ -75,8 +79,12 @@ public class MessageDispatcher {
 				builder.setHeaderIfAbsent(headerName, StringUtils.collectionToCommaDelimitedString(entry.getValue()));
 			}
 		}
+		String idKey = (topic.endsWith("s") ? topic.substring(0, topic.length() - 1) : topic) + "Id";
+		String id = this.idGenerator.generateId().toString();
+		builder.setHeader(idKey, id);
 		Message<?> message = builder.build();
 		channel.send(message);
-		return message.getHeaders().getId().toString();
+		log.info("dispatched message with {}: {}", idKey, id);
+		return id;
 	}
 }
