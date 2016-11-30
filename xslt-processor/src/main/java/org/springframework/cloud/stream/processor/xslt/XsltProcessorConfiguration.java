@@ -44,7 +44,7 @@ public class XsltProcessorConfiguration {
 
 	@Bean
 	public XsltProcessor xsltProcessor() { 
-		XsltProcessor processor = new XsltProcessor(transformer(), claimCheckStore());
+		XsltProcessor processor = new XsltProcessor(transformer(), properties.getDelay());
 		processor.setStylesheetName(properties.getStylesheet().getFilename());
 		return processor;
 	}
@@ -61,5 +61,10 @@ public class XsltProcessorConfiguration {
 	public ClaimCheckStore claimCheckStore() {
 		File dir = new File("/tmp/uploads");
 		return new LocalFileClaimCheckStore(dir, new JdkIdGenerator());
+	}
+
+	@Bean
+	public ClaimCheckMessageConverter claimCheckMessageConverter(ClaimCheckStore claimCheckStore) {
+		return new ClaimCheckMessageConverter(claimCheckStore);
 	}
 }

@@ -19,6 +19,7 @@ package org.springframework.cloud.stream.processor.xslt;
 import static org.junit.Assert.assertEquals;
 
 import java.io.FileReader;
+import java.io.InputStreamReader;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,9 +43,8 @@ import io.pivotal.poc.claimcheck.ClaimCheckStore;
  * @author Mark Fisher
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(properties={"xslt.stylesheet=test.xsl", "xslt.delay=0",
-		"spring.cloud.stream.bindings.output.content-type=text/plain"})
-public class XsltProcessorApplicationTests {
+@SpringBootTest(properties={"xslt.stylesheet=test.xsl", "xslt.delay=0"})
+public class XsltProcessorClaimCheckTests {
 
 	@Autowired
 	private Processor processor;
@@ -56,27 +56,7 @@ public class XsltProcessorApplicationTests {
 	private ClaimCheckStore claimCheckStore;
 
 	@Test
-	public void resourceMessage() throws Exception {
-		String expected = FileCopyUtils.copyToString(new FileReader(ResourceUtils.getFile("classpath:test.html")));
-		Resource payload = new ClassPathResource("test.xml");
-		Message<Resource> input = MessageBuilder.withPayload(payload).build();
-		processor.input().send(input);
-		Message<?> output = collector.forChannel(processor.output()).take();
-		assertEquals(expected, output.getPayload());
-	}
-
-	@Test
-	public void stringMessage() throws Exception {
-		String expected = FileCopyUtils.copyToString(new FileReader(ResourceUtils.getFile("classpath:test.html")));
-		String payload = FileCopyUtils.copyToString(new FileReader(ResourceUtils.getFile("classpath:test.xml")));
-		Message<String> input = MessageBuilder.withPayload(payload).build();
-		processor.input().send(input);
-		Message<?> output = collector.forChannel(processor.output()).take();
-		assertEquals(expected, output.getPayload());
-	}
-
-	@Test
-	public void claimCheckMessageWithoutClaimCheckedOutput() throws Exception {
+	public void claimCheckMessage() throws Exception {
 		String expected = FileCopyUtils.copyToString(new FileReader(ResourceUtils.getFile("classpath:test.html")));
 		String claimCheck = claimCheckStore.save(new ClassPathResource("test.xml"));
 		Message<String> input = MessageBuilder.withPayload(claimCheck)
@@ -84,6 +64,9 @@ public class XsltProcessorApplicationTests {
 				.build();
 		processor.input().send(input);
 		Message<?> output = collector.forChannel(processor.output()).take();
-		assertEquals(expected, output.getPayload());
+		assertEquals(claimCheck, output.getPayload());
+		Resource resource = this.claimCheckStore.find(claimCheck);
+		String result = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
+		assertEquals(expected, result);
 	}
 }

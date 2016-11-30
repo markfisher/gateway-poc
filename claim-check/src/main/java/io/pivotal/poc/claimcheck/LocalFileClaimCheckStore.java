@@ -56,7 +56,7 @@ public class LocalFileClaimCheckStore implements ClaimCheckStore {
 
 	@Override
 	public Resource find(String id) {
-		return new FileSystemResource(new File(this.directory, id));
+		return new ClaimCheckResource(id, new FileSystemResource(new File(this.directory, id)));
 	}
 
 	@Override

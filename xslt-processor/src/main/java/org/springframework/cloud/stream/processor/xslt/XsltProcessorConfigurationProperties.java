@@ -29,6 +29,8 @@ public class XsltProcessorConfigurationProperties {
 
 	private String[] paramHeaders = new String[] {"orderId"};
 
+	private long delay = 30_000;
+
 	public Resource getStylesheet() {
 		return stylesheet;
 	}
@@ -43,5 +45,13 @@ public class XsltProcessorConfigurationProperties {
 
 	public void setParamHeaders(String[] paramHeaders) {
 		this.paramHeaders = paramHeaders;
+	}
+
+	public long getDelay() {
+		return delay;
+	}
+
+	public void setDelay(long delay) {
+		this.delay = delay;
 	}
 }

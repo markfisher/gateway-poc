@@ -16,7 +16,6 @@
 
 package org.springframework.cloud.stream.processor.xslt;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.slf4j.Logger;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Processor;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.integration.xml.transformer.XsltPayloadTransformer;
 import org.springframework.messaging.Message;
@@ -35,7 +33,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
-import io.pivotal.poc.claimcheck.ClaimCheckStore;
+import io.pivotal.poc.claimcheck.ClaimCheckResource;
 
 /**
  * @author Mark Fisher
@@ -48,13 +46,12 @@ public class XsltProcessor {
 
 	private final XsltPayloadTransformer transformer;
 
-	private final ClaimCheckStore claimCheckStore;
+	private final long delay;
 
-	public XsltProcessor(XsltPayloadTransformer transformer, ClaimCheckStore claimCheckStore) {
+	public XsltProcessor(XsltPayloadTransformer transformer, long delay) {
 		Assert.notNull(transformer, "XsltPayloadTransformer must not be null");
-		Assert.notNull(claimCheckStore, "ClaimCheckStore must not be null");
 		this.transformer = transformer;
-		this.claimCheckStore = claimCheckStore;
+		this.delay = delay;
 	}
 
 	public void setStylesheetName(String stylesheetName) {
@@ -63,48 +60,23 @@ public class XsltProcessor {
 
 	@StreamListener(Processor.INPUT)
 	@SendTo(Processor.OUTPUT)
-	public Message<?> process(String payload, @Headers MessageHeaders headers) {
-		log.info("received payload: {}", payload);
+	public Message<?> process(Resource resource, @Headers MessageHeaders headers) throws Exception {
+		log.info("received payload: {}", resource);
 		log.info("received headers: {}", headers);
 		try {
 			// simulating processing time
-			Thread.sleep(30_000);
+			Thread.sleep(this.delay);
 		}
 		catch (Exception e) {
 			Thread.currentThread().interrupt();
 		}
-		boolean isClaimCheck = "application/x-claimcheck".equals(headers.get("contentType"));
-		Message<String> message = isClaimCheck ? checkout(payload, headers)
-				: MessageBuilder.withPayload(payload)
-								.copyHeaders(headers)
-								.setHeader("stylesheet", this.stylesheetName)
-								.build();
-		Message<?> transformed = this.transformer.transform(message);
-		return isClaimCheck ? checkin(transformed) : transformed;
-	}
-
-	private Message<String> checkout(String claimCheck, MessageHeaders headers) {
-		log.info("checking out {}", claimCheck);
-		Resource resource = this.claimCheckStore.find(claimCheck);
-		try {
-			String payload = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
-			return MessageBuilder.withPayload(payload)
-					.copyHeaders(headers)
-					.setHeader("claimCheck", claimCheck)
-					.setHeader("stylesheet", this.stylesheetName)
-					.build();
+		String content = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
+		MessageBuilder<String> builder = MessageBuilder.withPayload(content)
+				.copyHeaders(headers)
+				.setHeader("stylesheet", this.stylesheetName);
+		if (resource instanceof ClaimCheckResource) {
+			builder.setHeader("claimCheck", ((ClaimCheckResource) resource).getClaimCheck());
 		}
-		catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private Message<String> checkin(Message<?> message) {
-		String id = message.getHeaders().get("claimCheck", String.class);
-		Assert.hasText(id, "expected a 'claimCheck' header");
-		this.claimCheckStore.update(id, new ByteArrayResource(message.getPayload().toString().getBytes()));
-		log.info("checked in {}", id);
-		return MessageBuilder.withPayload(id).copyHeaders(message.getHeaders()).build();
+		return this.transformer.transform(builder.build());
 	}
 }
