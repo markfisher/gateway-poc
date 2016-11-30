@@ -58,14 +58,14 @@ public class XsltProcessorClaimCheckTests {
 	@Test
 	public void claimCheckMessage() throws Exception {
 		String expected = FileCopyUtils.copyToString(new FileReader(ResourceUtils.getFile("classpath:test.html")));
-		String claimCheck = claimCheckStore.save(new ClassPathResource("test.xml"));
-		Message<String> input = MessageBuilder.withPayload(claimCheck)
+		String claimCheck1 = claimCheckStore.save(new ClassPathResource("test.xml"));
+		Message<String> input = MessageBuilder.withPayload(claimCheck1)
 				.setHeader(MessageHeaders.CONTENT_TYPE, "application/x-claimcheck")
 				.build();
 		processor.input().send(input);
 		Message<?> output = collector.forChannel(processor.output()).take();
-		assertEquals(claimCheck, output.getPayload());
-		Resource resource = this.claimCheckStore.find(claimCheck);
+		String claimCheck2 = output.getPayload().toString();
+		Resource resource = this.claimCheckStore.find(claimCheck2);
 		String result = FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
 		assertEquals(expected, result);
 	}
