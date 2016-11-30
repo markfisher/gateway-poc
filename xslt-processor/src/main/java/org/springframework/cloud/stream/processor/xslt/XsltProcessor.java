@@ -33,8 +33,6 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
-import io.pivotal.poc.claimcheck.ClaimCheckResource;
-
 /**
  * @author Mark Fisher
  */
@@ -74,9 +72,6 @@ public class XsltProcessor {
 		MessageBuilder<String> builder = MessageBuilder.withPayload(content)
 				.copyHeaders(headers)
 				.setHeader("stylesheet", this.stylesheetName);
-		if (resource instanceof ClaimCheckResource) {
-			builder.setHeader("claimCheck", ((ClaimCheckResource) resource).getClaimCheck());
-		}
 		return this.transformer.transform(builder.build());
 	}
 }

@@ -16,6 +16,8 @@
 
 package org.springframework.cloud.stream.processor.xslt;
 
+import java.lang.reflect.Field;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +26,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
+import org.springframework.util.ReflectionUtils;
 
+import io.pivotal.poc.claimcheck.ClaimCheckResource;
 import io.pivotal.poc.claimcheck.ClaimCheckStore;
 
 /**
@@ -55,6 +60,12 @@ public class ClaimCheckMessageConverter extends AbstractMessageConverter {
 			if ("application/x-claimcheck".equals(message.getHeaders().get(MessageHeaders.CONTENT_TYPE))) {
 				Object resource = this.claimCheckStore.find(message.getPayload().toString());
 				log.info("checked out {}", resource);
+				MessageHeaderAccessor accessor = new MessageHeaderAccessor();
+				accessor.copyHeaders(message.getHeaders());
+				accessor.setHeader("claimCheck", ((ClaimCheckResource) resource).getClaimCheck());
+				Field field = ReflectionUtils.findField(message.getClass(), "headers");
+				field.setAccessible(true);
+				ReflectionUtils.setField(field, message, accessor.getMessageHeaders());
 				return resource;
 			}
 			else if (message.getPayload() instanceof String) {
