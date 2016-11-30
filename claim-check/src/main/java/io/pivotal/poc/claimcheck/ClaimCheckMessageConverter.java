@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.cloud.stream.processor.xslt;
+package io.pivotal.poc.claimcheck;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,6 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
-
-import io.pivotal.poc.claimcheck.ClaimCheckStore;
 
 /**
  * @author Mark Fisher

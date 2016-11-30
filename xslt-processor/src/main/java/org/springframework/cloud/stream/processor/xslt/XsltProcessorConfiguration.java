@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.xml.transformer.XsltPayloadTransformer;
 import org.springframework.util.JdkIdGenerator;
 
+import io.pivotal.poc.claimcheck.ClaimCheckMessageConverter;
 import io.pivotal.poc.claimcheck.ClaimCheckStore;
 import io.pivotal.poc.claimcheck.LocalFileClaimCheckStore;
 
